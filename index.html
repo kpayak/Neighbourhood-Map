@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang=en>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="img/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel="stylesheet">
+
+
+
+
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="main-panel">
+
+        <div class="search-panel">
+            <div class="search-input">
+                <form>
+                    <input type="search" placeholder="Find a place, address..">
+                </form>
+
+            </div>
+            <button class="search-icon">
+                <i class="icon ion-search"></i>
+            </button>
+        </div>
+
+        <div class="location-indicator">
+            <div class="indicator"></div>
+            <div class="location"></div>
+        </div>
+
+
+
+        <div class="locations-list" data-bind="foreach: googleNearbySearchResults">
+            <div class="list-box">
+                <img class="place-img"></img>
+                <div class="place-details">
+                    <div class="title">
+                        <div class="index" data-bind="text: $index()+1"></div>
+                        <div data-bind="text:$data.name"></div>
+                    </div>
+                    <div class="address">
+                        <i class="icon ion-ios-location place-icons"></i>
+                        <div data-bind="text:$data.formatted_address"></div>
+                    </div>
+                    <div class="phone" data-bind="if: $data.formatted_phone_number">
+                        <i class="icon ion-ios-telephone place-icons"></i>
+                        <div data-bind="text: $data.formatted_phone_number">No phone number available</div>
+                    </div>
+                    <div class="yelp-reviews">No review available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map">
+    </div>
+
+    <!--Knockout JS-->
+    <script type='text/javascript' src="js/libs/knockout.js"></script>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Main JS File -->
+    <script type='text/javascript' src="js/main.js"></script>
+    <!-- Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC2aWJBV-USDHah8cf2YIrZ9bKQZawRnz4&v=3&libraries=places&callback=initMap" async defer></script>
+
+</body>
+
+</html>
