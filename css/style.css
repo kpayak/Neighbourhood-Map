@@ -116,12 +116,14 @@ input:focus:-moz-placeholder {
 }
 
 .list-box:hover {
-    background-color: #E4F1FE;
+    background-color: #f7f7f7;
+    border-left: 6px solid #19B5FE;
 }
 
 .place-img {
     margin-left: 5px;
-    width: 25%;
+    width: 100px;
+    width: 100px;
     background-color: darkgray;
 }
 

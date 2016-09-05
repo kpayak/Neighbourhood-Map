@@ -37,7 +37,7 @@
 
         <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div class="list-box">
-                <img class="place-img"></img>
+                <img class="place-img" data-bind="attr:{src: $data.thumbnail}"></img>
                 <div class="place-details">
                     <div class="title">
                         <div class="index" data-bind="text: $index()+1"></div>
@@ -51,7 +51,7 @@
                         <i class="icon ion-ios-telephone place-icons"></i>
                         <div data-bind="text: $data.phone"></div>
                     </div>
-                    <div class="yelp-reviews">No review available</div>
+                    <div class="yelp-reviews" data-bind="$data.yelpReviews"></div>
                 </div>
             </div>
         </div>
