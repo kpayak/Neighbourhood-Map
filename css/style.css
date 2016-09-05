@@ -12,14 +12,14 @@ body {
 #map {
     float: right;
     height: 100%;
-    width: 70%;
+    width: 65%;
 }
 
 #main-panel {
     float: left;
     background-color: #fff;
     height: 100%;
-    width: 30%;
+    width: 35%;
     /*    border-radius: 10px;*/
     overflow-y: auto;
     /*    border: 5px solid blue;*/

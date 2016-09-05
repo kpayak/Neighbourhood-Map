@@ -35,7 +35,7 @@
 
 
 
-        <div class="locations-list" data-bind="foreach: googleNearbySearchResults">
+        <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div class="list-box">
                 <img class="place-img"></img>
                 <div class="place-details">
@@ -45,11 +45,11 @@
                     </div>
                     <div class="address">
                         <i class="icon ion-ios-location place-icons"></i>
-                        <div data-bind="text:$data.formatted_address"></div>
+                        <div data-bind="text:$data.address"></div>
                     </div>
-                    <div class="phone" data-bind="if: $data.formatted_phone_number">
+                    <div class="phone">
                         <i class="icon ion-ios-telephone place-icons"></i>
-                        <div data-bind="text: $data.formatted_phone_number">No phone number available</div>
+                        <div data-bind="text: $data.phone"></div>
                     </div>
                     <div class="yelp-reviews">No review available</div>
                 </div>

@@ -4,6 +4,7 @@
 var map;
 var placesService;
 var googleNearbySearchResults = ko.observableArray();
+var viewmodel = {};
 //Find current location and set as default center for map
 var defaultLocation = {
     lat: 37.7749,
@@ -98,6 +99,7 @@ function callback(results, status) {
             if (status === "OK") {
                 //console.log(p);
                 googleNearbySearchResults.push(p);
+                updatePlaceObject(p);
             }
         });
     }
@@ -114,26 +116,44 @@ function addMarker(position, title) {
     });
 }
 
+function updatePlaceObject(p) {
+    var place = {};
+
+    //place.id = p.place_id;
+
+    if (p.name) {
+        place.name = p.name;
+    } else {
+        place.name = "N/A";
+    }
+
+    if (p.address_components.length > 0) {
+        place.address = p.address_components[0].short_name + " " + p.address_components[1].short_name + ", " + p.address_components[2].short_name + " " + p.address_components[4].short_name + " " + p.address_components[6].short_name;
+    } else {
+        place.address = "N/A";
+    }
+
+    if (p.formatted_phone_number) {
+        place.phone = p.formatted_phone_number;
+    } else {
+        place.phone = "N/A";
+    }
+    viewModel.listOfPlaces.push(place);
+}
+
+
 /* KO Starts Here */
 $(document).ready(function () {
-        var viewModel = {
+        viewModel = {
+            listOfPlaces: ko.observableArray(),
             place: {
                 name: ko.observable('N/A'),
                 address: ko.observable('N/A'),
                 phone: ko.observable('N/A'),
                 yelpReviews: ko.observable('N/A')
             }
-
-            //            add: function () {}
         };
         ko.applyBindings(viewModel);
-
-        var places = ko.observableArray();
-        var noOfPlaces = ko.observable(googleNearbySearchResults().length);
-        console.log(noOfPlaces());
-        for (var p = 0; p < noOfPlaces(); p++) {
-            console.log(googleNearbySearchResults()[p].name);
-        }
-
-        //console.log(googleNearbySearchResults().length);
+        console.log(viewModel.listOfPlaces());
+        //console.log(googleNearbySearchResults());
     }) //Main ends here
