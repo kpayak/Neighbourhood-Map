@@ -33,6 +33,7 @@ body {
 }
 
 input {
+    cursor: pointer;
     font-size: 18px;
     font-weight: 100;
     float: left;
@@ -57,6 +58,7 @@ input:focus:-moz-placeholder {
 
 .search-icon {
     border: 0;
+    cursor: pointer;
     background-color: #19B5FE;
     text-align: center;
     font-size: 30px;
@@ -64,6 +66,17 @@ input:focus:-moz-placeholder {
     height: 70px;
     float: right;
     width: 20%;
+    transition: background-color 0.5s;
+}
+
+.search-icon:hover {
+    background-color: #3498DB;
+}
+
+.search-icon:focus {
+    border: 0 !important;
+    outline-style: none !important;
+    outline: 0 !important;
 }
 
 .location-indicator {

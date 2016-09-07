@@ -4,10 +4,13 @@
 var map;
 var placesService;
 var viewmodel = {};
+var markers = [];
+var bounds;
 
 //Marker colors:
 var markerColorHome = '19B5FE';
 var markerColorDefault = 'F22613';
+var markerColorHover = '26C281';
 
 //Find current location and set as default center for map
 var defaultLocation = {
@@ -32,15 +35,12 @@ function setCurrentLocation() {
             map.setCenter(pos);
             googleNearbySearch(pos);
             //Add a marker for current location
-            addMarker(pos, "You are here", "H", markerColorHome);
-
+            addMarker(pos, "You are here", "", markerColorHome, "home");
             //Find formatted address of current location
             reverseGeoCode(pos, '#2ECC71');
         }, geolocErrorHandler, geolocOptions);
     }
 }
-
-
 
 //Function to handle Geo-locator errors.
 function geolocErrorHandler(error) {
@@ -48,7 +48,7 @@ function geolocErrorHandler(error) {
     map.setCenter(defaultLocation);
     reverseGeoCode(defaultLocation, '#F64747');
     googleNearbySearch(defaultLocation);
-    addMarker(defaultLocation, "You are here");
+    addMarker(defaultLocation, "You are here", "H", markerColorHome);
 }
 
 // Function to reverse geo-code from a lat,lng 
@@ -62,7 +62,7 @@ function reverseGeoCode(position, color) {
             formattedAddress = results[1].formatted_address;
 
         } else {
-            formattedAddress = "Failed to reverse geo-code"
+            formattedAddress = "Failed to reverse geo-code";
         }
 
         $('.location').text(formattedAddress);
@@ -73,10 +73,7 @@ function reverseGeoCode(position, color) {
     });
 }
 
-
-
-
-function addMarker(position, title, markerText, markerColor) {
+function addMarker(position, title, markerText, markerColor, id) {
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + markerText + "|" + markerColor + "|FFF");
 
     var marker = new google.maps.Marker({
@@ -84,11 +81,32 @@ function addMarker(position, title, markerText, markerColor) {
         map: map,
         //animation: google.maps.Animation.DROP,
         icon: pinImage,
-        title: title
+        title: title,
+        id: id
     });
+    bounds.extend(marker.position);
+    map.setCenter(bounds.getCenter());
+    map.setZoom(12);
+    markers.push(marker);
+}
+
+function clearMarkers() {
+    for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+    }
+    markers = [];
+}
+
+function reCenterBounds() {
+    bounds = new google.maps.LatLngBounds();
+    for (var i = 0; i < markers.length; i++) {
+        bounds.extend(markers[i].position);
+    }
+    map.fitBounds(bounds);
 }
 
 function updatePlaceObject(p) {
+
     var place = {};
 
     place.id = p.place_id;
@@ -113,7 +131,7 @@ function updatePlaceObject(p) {
     }
 
     //Thumbnail
-    if (p.photos.length > 0) {
+    if (p.photos) {
         place.thumbnail = p.photos[0].getUrl({
             'maxWidth': 100,
             'maxHeight': 100
@@ -130,16 +148,65 @@ function updatePlaceObject(p) {
         };
     }
 
+    //Add index to find where this object is in listOfPlaces list
+    place.index = viewModel.listOfPlaces().length;
 
     //Add marker for each place
     viewModel.listOfPlaces.push(place);
     addMarker({
         lat: p.geometry.location.lat(),
         lng: p.geometry.location.lng()
-    }, p.name, viewModel.listOfPlaces().length, markerColorDefault);
+    }, p.name, viewModel.listOfPlaces().length, markerColorDefault, place.id);
 }
 
+function googleTextSearch(position, queryText) {
+    clearMarkers();
+    var placesService = new google.maps.places.PlacesService(map);
+    var request = {
+        location: position,
+        radius: '6000',
+        query: queryText
+    };
+    placesService.textSearch(request, callback);
+}
 
+function googleNearbySearch(position) {
+    placesService = new google.maps.places.PlacesService(map);
+    var currentLatLng = map.getCenter();
+    var initialRequest = {
+        location: position,
+        radius: 6000,
+        types: ['restaurant', 'cafe', 'bus_station', 'city_hall', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall', 'museum', 'library', 'hospital']
+    };
+    placesService.nearbySearch(initialRequest, callback);
+}
+
+function callback(results, status) {
+    //Clear list of places before updating it with search results
+    viewModel.listOfPlaces.removeAll();
+
+    //Clear all markers before updating results
+
+    for (var i = 0; i < results.length; i++) {
+        var place = placesService.getDetails({
+            placeId: results[i].place_id
+        }, function (p, status) {
+            if (status === "OK") {
+                updatePlaceObject(p);
+            }
+        });
+    }
+}
+
+function startSearch() {
+    //Listen to click events of search icon
+    var searchQuery;
+    searchQuery = $('input').val();
+    googleTextSearch(map.getCenter(), searchQuery);
+    reCenterBounds();
+}
+
+//Google maps initiates from Here. This can be treated as the starting point/main() of this application.
 function initMap() {
 
     //Initialize Google maps
@@ -149,66 +216,24 @@ function initMap() {
 
     /* Re-center map based on user's current location */
     setCurrentLocation();
-}
+    reCenterBounds();
+    $('.search-icon').click(startSearch);
 
-
-function googleTextSearch(position, queryText) {
-    var placesService = new google.maps.places.PlacesService(map);
-    var request = {
-        location: position,
-        radius: '10000',
-        query: queryText
-    };
-
-    placesService.textSearch(request, textSearchCB);
-}
-
-function textSearchCB(results, status) {
-    console.log(status);
-    console.log(results);
-}
-
-function googleNearbySearch(position) {
-    placesService = new google.maps.places.PlacesService(map);
-    var currentLatLng = map.getCenter();
-    var initialRequest = {
-        location: position,
-        radius: 6000,
-        types: ['restaurant', 'cafe']
-    };
-    placesService.nearbySearch(initialRequest, callback);
-}
-
-function callback(results, status) {
-    for (var i = 0; i < results.length; i++) {
-        var place = placesService.getDetails({
-            placeId: results[i].place_id
-        }, function (p, status) {
-            if (status === "OK") {
-                updatePlaceObject(p);
-                //Add marker for each place
-
-            }
-        });
-    }
 }
 
 /* KO Starts Here */
-$(document).ready(function () {
-        viewModel = {
-            listOfPlaces: ko.observableArray(),
-            place: {
-                name: ko.observable('N/A'),
-                address: ko.observable('N/A'),
-                phone: ko.observable('N/A'),
-                thumbnail: '',
-                yelpReviews: ko.observable('N/A')
-            }
-        };
-        ko.applyBindings(viewModel);
-        console.log(viewModel.listOfPlaces());
-        googleTextSearch({
-            lat: 37.4167317,
-            lng: -121.90103529999999
-        }, "Indian");
-    }) //Main ends here
+viewModel = {
+    listOfPlaces: ko.observableArray(),
+    highlightMarker: function () {
+        //        console.log("calling highlight marker for " + this.index);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (this.index + 1) + "|" + markerColorHover + "|FFF");
+        markers[this.index + 1].setIcon(pinImage);
+    },
+    resetMarkerColor: function () {
+        //        console.log("calling highlight marker for " + this.index);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (this.index + 1) + "|" + markerColorDefault + "|FFF");
+        markers[this.index + 1].setIcon(pinImage);
+    }
+};
+
+ko.applyBindings(viewModel);
