@@ -41,6 +41,7 @@ input {
     height: 70px;
     border: none;
     background-color: #EEEEEE;
+    color: #a3a3a3;
 }
 
 input:focus {

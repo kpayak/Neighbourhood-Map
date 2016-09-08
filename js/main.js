@@ -87,7 +87,12 @@ function addMarker(position, title, markerText, markerColor, id) {
     bounds.extend(marker.position);
     map.setCenter(bounds.getCenter());
     map.setZoom(12);
-    markers.push(marker);
+
+    //Dont push "Home" Marker into the markers array.
+    if (id !== "home") {
+        markers.push(marker);
+    }
+
 }
 
 function clearMarkers() {
@@ -147,9 +152,6 @@ function updatePlaceObject(p) {
             lng: p.geometry.location.lng()
         };
     }
-
-    //Add index to find where this object is in listOfPlaces list
-    place.index = viewModel.listOfPlaces().length;
 
     //Add marker for each place
     viewModel.listOfPlaces.push(place);
@@ -218,22 +220,34 @@ function initMap() {
     setCurrentLocation();
     reCenterBounds();
     $('.search-icon').click(startSearch);
+    console.log(viewModel.listOfPlaces());
+    console.log(markers);
+}
 
+function findMarkerIndex(id) {
+    var i;
+    for (i = 0; i < markers.length; i++) {
+        if (markers[i].id === id) {
+            return i;
+            break;
+        }
+    }
 }
 
 /* KO Starts Here */
+
 viewModel = {
     listOfPlaces: ko.observableArray(),
     highlightMarker: function () {
-        //        console.log("calling highlight marker for " + this.index);
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (this.index + 1) + "|" + markerColorHover + "|FFF");
-        markers[this.index + 1].setIcon(pinImage);
+        var markerIndex = findMarkerIndex(this.id);
+        console.log("markerIndex: " + markerIndex);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (markerIndex + 1) + "|" + markerColorHover + "|FFF");
+        markers[markerIndex].setIcon(pinImage);
     },
     resetMarkerColor: function () {
-        //        console.log("calling highlight marker for " + this.index);
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (this.index + 1) + "|" + markerColorDefault + "|FFF");
-        markers[this.index + 1].setIcon(pinImage);
+        var markerIndex = findMarkerIndex(this.id);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (markerIndex + 1) + "|" + markerColorDefault + "|FFF");
+        markers[markerIndex].setIcon(pinImage);
     }
 };
-
 ko.applyBindings(viewModel);
