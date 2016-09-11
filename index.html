@@ -19,7 +19,7 @@
         <div class="search-panel">
             <div class="search-input">
                 <form data-bind="submit:startSearch">
-                    <input type="search" placeholder="Find a place, address..">
+                    <input class="search" type="search" placeholder="Find a place, address..">
                 </form>
 
             </div>
@@ -29,6 +29,14 @@
         </div>
 
         <div class="location-indicator">
+            <div class="filter-input">
+                <input type="search" placeholder="Filter by..">
+            </div>
+            <div class="filter-icon">
+                <button class="filter-icon">
+                    <i class="icon ion-funnel"></i>
+                </button>
+            </div>
             <div class="indicator"></div>
             <div class="location"></div>
         </div>
@@ -36,22 +44,24 @@
 
 
         <div class="locations-list" data-bind="foreach: listOfPlaces">
-            <div class="list-box" data-bind="event: {mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
-                <img class="place-img" data-bind="attr:{src: $data.thumbnail}"></img>
-                <div class="place-details">
-                    <div class="title">
-                        <div class="index" data-bind="text: $index()+1"></div>
-                        <div data-bind="text:$data.name"></div>
+            <div data-bind="if:$data.show">
+                <div class="list-box" data-bind="event: {mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
+                    <img class="place-img" data-bind="attr:{src: $data.thumbnail}"><img>
+                    <div class="place-details">
+                        <div class="title">
+                            <div class="index" data-bind="text: $index()+1"></div>
+                            <div data-bind="text:$data.name"></div>
+                        </div>
+                        <div class="address">
+                            <i class="icon ion-ios-location place-icons"></i>
+                            <div data-bind="text:$data.address"></div>
+                        </div>
+                        <div class="phone">
+                            <i class="icon ion-ios-telephone place-icons"></i>
+                            <div data-bind="text: $data.phone"></div>
+                        </div>
+                        <div class="yelp-reviews" data-bind="$data.yelpReviews"></div>
                     </div>
-                    <div class="address">
-                        <i class="icon ion-ios-location place-icons"></i>
-                        <div data-bind="text:$data.address"></div>
-                    </div>
-                    <div class="phone">
-                        <i class="icon ion-ios-telephone place-icons"></i>
-                        <div data-bind="text: $data.phone"></div>
-                    </div>
-                    <div class="yelp-reviews" data-bind="$data.yelpReviews"></div>
                 </div>
             </div>
         </div>

@@ -32,7 +32,7 @@ body {
     /*    background-color: #19B5FE;*/
 }
 
-input {
+.search {
     cursor: pointer;
     font-size: 18px;
     font-weight: 100;
@@ -83,7 +83,7 @@ input:focus:-moz-placeholder {
 .location-indicator {
     display: flex;
     flex-direction: row;
-    justify-content: flex-end;
+    /*    justify-content: flex-end;*/
     align-items: center;
     padding-top: 5px;
     width: 100%;
@@ -109,6 +109,8 @@ input:focus:-moz-placeholder {
 .locations-list {
     width: 100%;
     margin-top: 10px;
+    color: #34495E;
+    /*    text-align: center;*/
 }
 
 .list-box {
@@ -187,4 +189,29 @@ input:focus:-moz-placeholder {
     flex-direction: row;
     justify-content: flex-start;
     font-size: 12px;
+}
+
+.infowindow-header {
+    display: block;
+}
+
+h2 {
+    /*    float: left;*/
+    margin: 8px 0px 0px 8px;
+    padding: 0;
+    color: #426584;
+}
+
+.infowindow-img {
+    float: left;
+    width: 25px;
+    height: 25px;
+    padding: 5px;
+    margin-right: 5px;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
+}
+
+.infowindow-text {
+    color: #888888;
 }
