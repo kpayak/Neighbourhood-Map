@@ -29,7 +29,7 @@ body {
 .search-panel {
     width: 100%;
     height: 40px;
-    /*    background-color: #19B5FE;*/
+    /*    background-color: #1F3A93;*/
 }
 
 .search {
@@ -60,7 +60,7 @@ input:focus:-moz-placeholder {
 .search-icon {
     border: 0;
     cursor: pointer;
-    background-color: #19B5FE;
+    background-color: #1F3A93;
     text-align: center;
     font-size: 30px;
     color: #fff;
@@ -133,7 +133,7 @@ input:focus:-moz-placeholder {
 
 .list-box:hover {
     background-color: #f7f7f7;
-    border-left: 6px solid #19B5FE;
+    border-left: 6px solid #1F3A93;
 }
 
 .place-img {
@@ -155,7 +155,7 @@ input:focus:-moz-placeholder {
 
 .place-icons {
     font-size: 16px;
-    color: #19B5FE;
+    color: #888888;
     margin-right: 8px;
 }
 
@@ -165,7 +165,7 @@ input:focus:-moz-placeholder {
     align-items: center;
     font-size: 18px;
     font-weight: 400;
-    color: #19B5FE;
+    color: #888888;
     /*    padding-bottom: 2px;*/
 }
 
@@ -179,12 +179,13 @@ input:focus:-moz-placeholder {
     height: 25px;
     width: 25px;
     border-radius: 50%;
-    color: #fff;
-    background-color: #19B5FE;
+    color: #888888;
+    border: 0.5px solid #888888;
 }
 
 .address,
 .phone {
+    color: #888888;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -199,7 +200,7 @@ h2 {
     /*    float: left;*/
     margin: 8px 0px 0px 8px;
     padding: 0;
-    color: #426584;
+    color: #1F3A93;
 }
 
 .infowindow-img {

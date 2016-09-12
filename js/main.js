@@ -37,7 +37,7 @@ function setCurrentLocation() {
             map.setCenter(pos);
             googleNearbySearch(pos);
             //Add a marker for current location
-            addMarker(pos, "You are here", "", markerColorHome, "home");
+            //addMarker(pos, "You are here", "", markerColorHome, "home");
             //Find formatted address of current location
             reverseGeoCode(pos, '#2ECC71');
         }, geolocErrorHandler, geolocOptions);
@@ -77,7 +77,7 @@ function reverseGeoCode(position, color) {
 
 function addMarker(position, title, markerText, markerColor, id) {
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + markerText + "|" + markerColor + "|FFF");
-
+    var bounds = new google.maps.LatLngBounds();
     var marker = new google.maps.Marker({
         position: position,
         map: map,
@@ -99,48 +99,23 @@ function addMarker(position, title, markerText, markerColor, id) {
     }
 }
 
-function findMarkerIndex(id) {
-    var i;
-    for (i = 0; i < markers.length; i++) {
-        if (markers[i].id === id) {
-            return i;
-            break;
-        }
-    }
-}
+function populateInfoWindow(place) {
 
-function populateInfoWindow(marker) {
-    var index = findMarkerIndex(marker.id);
-    console.log(viewModel.listOfPlaces()[index].name);
-    var nameString = "<div class='infowindow-header'><div><h2>" + viewModel.listOfPlaces()[index].name + "</div></h2>";
-    var iconString = "<div><img class='infowindow-img' src=" + viewModel.listOfPlaces()[index].icon + "></div></div>";
-    var addressString = "<p class='infowindow-text'>" + viewModel.listOfPlaces()[index].address + "</p>";
-    var phoneString = "<p class='infowindow-text'>" + viewModel.listOfPlaces()[index].phone + " | ";
-    var websiteString = "<a href=" + viewModel.listOfPlaces()[index].website + ">Website</a>" + "</p>";
-    var hoursString = "<p class='infowindow-text'>Current Status: " + viewModel.listOfPlaces()[index].hours + "</p>";
+    var nameString = "<div class='infowindow-header'><div><h2>" + place.name + "</div></h2>";
+    var iconString = "<div><img class='infowindow-img' src=" + place.icon + "></div></div>";
+    var addressString = "<p class='infowindow-text'>" + place.address + "</p>";
+    var phoneString = "<p class='infowindow-text'>" + place.phone + " | ";
+    var websiteString = "<a href=" + place.website + ">Website</a>" + "</p>";
+    var hoursString = "<p class='infowindow-text'>Current Status: " + place.hours + "</p>";
     contentString = iconString + nameString + addressString + phoneString + websiteString + hoursString;
     infowindow.setContent(contentString);
-    infowindow.open(map, marker);
+    infowindow.open(map, place.marker);
 }
 
-function clearMarkers() {
-    for (var i = 0; i < markers.length; i++) {
-        markers[i].setMap(null);
-    }
-    markers = [];
-}
-
-function reCenterBounds() {
-    bounds = new google.maps.LatLngBounds();
-    for (var i = 0; i < markers.length; i++) {
-        bounds.extend(markers[i].position);
-    }
-    map.fitBounds(bounds);
-}
-
-function updatePlaceObject(p) {
+function updatePlaceObject(p, bounds) {
 
     var place = {};
+
 
     //Flag to show/hide in "view". Default set to true
     place.show = ko.observable(true);
@@ -200,23 +175,44 @@ function updatePlaceObject(p) {
         if (p.opening_hours.open_now) {
             place.hours = "Open Now";
         } else {
-            place.hours = "Not available";
+            place.hours = "Closed for today";
         }
 
     } else {
-        place.hours = "Closed for today";
+        place.hours = "N/A";
     }
 
+    place.index = viewModel.listOfPlaces().length + 1;
+
+    //Prepare marker object for each place
+    var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + place.index + "|" + markerColorDefault + "|FFF");
+
+    place.marker = new google.maps.Marker({
+        position: place.latlng,
+        //animation: google.maps.Animation.DROP,
+        icon: pinImage,
+        title: place.name,
+        id: place.id
+    });
+
     //Add marker for each place
+    place.addMarker = function () {
+        bounds.extend(place.marker.position);
+        map.setCenter(bounds.getCenter());
+        map.setZoom(12);
+        place.marker.visible = place.show();
+        place.marker.setMap(map);
+        //Add click listener to markers
+        place.marker.addListener('click', function () {
+            populateInfoWindow(place);
+        });
+    }
+    place.addMarker();
+    map.fitBounds(bounds);
     viewModel.listOfPlaces.push(place);
-    addMarker({
-        lat: p.geometry.location.lat(),
-        lng: p.geometry.location.lng()
-    }, p.name, viewModel.listOfPlaces().length, markerColorDefault, place.id);
 }
 
 function googleTextSearch(position, queryText) {
-    clearMarkers();
     var placesService = new google.maps.places.PlacesService(map);
     var request = {
         location: position,
@@ -240,6 +236,7 @@ function googleNearbySearch(position) {
 function callback(results, status) {
     //Clear list of places before updating it with search results
     viewModel.listOfPlaces.removeAll();
+    var bounds = new google.maps.LatLngBounds();
     if (status === "OK") {
         //Clear any lingering html
         $('.locations-list').html("");
@@ -248,7 +245,7 @@ function callback(results, status) {
                 placeId: results[i].place_id
             }, function (p, status) {
                 if (status === "OK") {
-                    updatePlaceObject(p);
+                    updatePlaceObject(p, bounds);
                 }
             });
         }
@@ -259,23 +256,25 @@ function callback(results, status) {
 
 }
 
-function startSearch() {
+function filter() {
     //Listen to click events of search icon
-
     var searchQuery = $('input').val().toLocaleLowerCase();
     var lowerCaseName = "";
-    console.log("start search: " + searchQuery);
     for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
         lowerCaseName = viewModel.listOfPlaces()[i].name.toLowerCase();
         if (lowerCaseName.search(searchQuery) !== -1) {
             viewModel.listOfPlaces()[i].show(true);
+            viewModel.listOfPlaces()[i].addMarker();
         } else {
             viewModel.listOfPlaces()[i].show(false);
+            viewModel.listOfPlaces()[i].addMarker();
         }
     }
+}
 
-    //googleTextSearch(map.getCenter(), searchQuery);
-    reCenterBounds();
+function startSearch() {
+    var searchQuery = $('input').val();
+    googleTextSearch(map.getCenter(), searchQuery);
 }
 
 //Google maps initiates from Here. This can be treated as the starting point/main() of this application.
@@ -285,6 +284,7 @@ function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13
     });
+
 
     //Infowindow 
     infowindow = new google.maps.InfoWindow();
@@ -296,8 +296,8 @@ function initMap() {
 
     /* Re-center map based on user's current location */
     setCurrentLocation();
-    reCenterBounds();
-    $('.search').keyup(startSearch);
+    $('.search').keyup(filter);
+    $('.search-icon').click(startSearch);
 }
 
 
@@ -307,14 +307,13 @@ function initMap() {
 viewModel = {
     listOfPlaces: ko.observableArray(),
     highlightMarker: function () {
-        var markerIndex = findMarkerIndex(this.id);
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (markerIndex + 1) + "|" + markerColorHover + "|FFF");
-        markers[markerIndex].setIcon(pinImage);
+        //console.log(this);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorHover + "|FFF");
+        this.marker.setIcon(pinImage);
     },
     resetMarkerColor: function () {
-        var markerIndex = findMarkerIndex(this.id);
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + (markerIndex + 1) + "|" + markerColorDefault + "|FFF");
-        markers[markerIndex].setIcon(pinImage);
+        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorDefault + "|FFF");
+        this.marker.setIcon(pinImage);
     }
 };
 ko.applyBindings(viewModel);
