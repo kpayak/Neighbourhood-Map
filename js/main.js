@@ -17,7 +17,7 @@ var markerColorHover = '26C281';
 //Find current location and set as default center for map
 var defaultLocation = {
     lat: 37.7749,
-    lng: 122.4194
+    lng: -122.4194
 };
 
 function setCurrentLocation() {
@@ -28,6 +28,7 @@ function setCurrentLocation() {
         enableHighAccuracy: false //Low accuracy for faster detection time
     };
 
+    //Find user's current location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
             pos = {
@@ -35,22 +36,28 @@ function setCurrentLocation() {
                 lng: position.coords.longitude
             };
             map.setCenter(pos);
-            googleNearbySearch(pos);
+            googleNearbySearch(pos, bounds);
             //Add a marker for current location
-            //addMarker(pos, "You are here", "", markerColorHome, "home");
+            addMarker(pos, "You are here", "", markerColorHome);
             //Find formatted address of current location
             reverseGeoCode(pos, '#2ECC71');
         }, geolocErrorHandler, geolocOptions);
+    } else {
+        //If user device does not have location services then set map to default location
+        map.setCenter(defaultLocation);
+        reverseGeoCode(defaultLocation, '#F64747');
+        googleNearbySearch(defaultLocation, bounds);
+        addMarker(defaultLocation, "Default Marker", "", markerColorHome);
     }
 }
 
 //Function to handle Geo-locator errors.
 function geolocErrorHandler(error) {
-    //console.log("Error code: " + error.code);
+    //    console.log("Error code: " + error.code);
     map.setCenter(defaultLocation);
     reverseGeoCode(defaultLocation, '#F64747');
+    addMarker(defaultLocation, "Default Marker", "", markerColorHome);
     googleNearbySearch(defaultLocation);
-    addMarker(defaultLocation, "You are here", "H", markerColorHome);
 }
 
 // Function to reverse geo-code from a lat,lng 
@@ -75,7 +82,7 @@ function reverseGeoCode(position, color) {
     });
 }
 
-function addMarker(position, title, markerText, markerColor, id) {
+function addMarker(position, title, markerText, markerColor) {
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + markerText + "|" + markerColor + "|FFF");
     var bounds = new google.maps.LatLngBounds();
     var marker = new google.maps.Marker({
@@ -84,19 +91,8 @@ function addMarker(position, title, markerText, markerColor, id) {
         //animation: google.maps.Animation.DROP,
         icon: pinImage,
         title: title,
-        id: id
     });
     bounds.extend(marker.position);
-    map.setCenter(bounds.getCenter());
-    map.setZoom(12);
-
-    //Dont push "Home" Marker into the markers array.
-    if (id !== "home") {
-        markers.push(marker);
-        marker.addListener('click', function () {
-            populateInfoWindow(this);
-        });
-    }
 }
 
 function populateInfoWindow(place) {
@@ -112,10 +108,9 @@ function populateInfoWindow(place) {
     infowindow.open(map, place.marker);
 }
 
-function updatePlaceObject(p, bounds) {
+function updatePlaceObject(p) {
 
     var place = {};
-
 
     //Flag to show/hide in "view". Default set to true
     place.show = ko.observable(true);
@@ -132,7 +127,7 @@ function updatePlaceObject(p, bounds) {
         place.name = "N/A";
     }
 
-    if (p.address_components.length > 0) {
+    if (p.address_components) {
         place.address = p.address_components[0].short_name + " " + p.address_components[1].short_name + ", " + p.address_components[2].short_name + " " + p.address_components[4].short_name + " " + p.address_components[6].short_name;
     } else {
         place.address = "N/A";
@@ -208,7 +203,6 @@ function updatePlaceObject(p, bounds) {
         });
     }
     place.addMarker();
-    map.fitBounds(bounds);
     viewModel.listOfPlaces.push(place);
 }
 
@@ -236,8 +230,7 @@ function googleNearbySearch(position) {
 function callback(results, status) {
     //Clear list of places before updating it with search results
     viewModel.listOfPlaces.removeAll();
-    var bounds = new google.maps.LatLngBounds();
-    if (status === "OK") {
+    if (status === "OK" && results.length > 1) {
         //Clear any lingering html
         $('.locations-list').html("");
         for (var i = 0; i < results.length; i++) {
@@ -245,7 +238,7 @@ function callback(results, status) {
                 placeId: results[i].place_id
             }, function (p, status) {
                 if (status === "OK") {
-                    updatePlaceObject(p, bounds);
+                    updatePlaceObject(p);
                 }
             });
         }
@@ -253,11 +246,11 @@ function callback(results, status) {
         console.log("no results");
         $('.locations-list').html("No results match your query.");
     }
-
+    map.setCenter(bounds.getCenter());
+    map.fitBounds(bounds);
 }
 
 function filter() {
-    //Listen to click events of search icon
     var searchQuery = $('input').val().toLocaleLowerCase();
     var lowerCaseName = "";
     for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
@@ -285,7 +278,8 @@ function initMap() {
         zoom: 13
     });
 
-
+    //Bounds object
+    bounds = new google.maps.LatLngBounds();
     //Infowindow 
     infowindow = new google.maps.InfoWindow();
 
@@ -296,6 +290,7 @@ function initMap() {
 
     /* Re-center map based on user's current location */
     setCurrentLocation();
+    //map.fitBounds(bounds);
     $('.search').keyup(filter);
     $('.search-icon').click(startSearch);
 }
