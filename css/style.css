@@ -300,10 +300,16 @@ input:focus:-moz-placeholder {
     display: block;
 }
 
+.infowindow-header p {
+    padding: 5px;
+}
+
 h2 {
     margin: 8px 0px 0px 8px;
     padding: 0;
     color: #5c5c5c;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eaeaea;
 }
 
 .infowindow-img {

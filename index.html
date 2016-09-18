@@ -32,7 +32,7 @@
 
         <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div data-bind="if:$data.show">
-                <div class="list-box" data-bind="event: {click:$parent.highlightMarker, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
+                <div class="list-box" data-bind="event: {click:$parent.onClick, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
                     <img class="place-img" data-bind="attr:{src: $data.thumbnail}"><img>
                     <div class="place-details">
                         <div class="title">

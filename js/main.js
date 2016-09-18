@@ -330,6 +330,12 @@ viewModel = {
     resetMarkerColor: function () {
         var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorDefault + "|FFF");
         this.marker.setIcon(pinImage);
+    },
+    onClick: function () {
+
+        populateInfoWindow(this);
     }
+
+
 };
 ko.applyBindings(viewModel);
