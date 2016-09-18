@@ -4,22 +4,17 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="img/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel="stylesheet">
-
-
-
-
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
 </head>
 
 <body>
-
     <div id="main-panel">
 
         <div class="search-panel">
             <div class="search-input">
                 <form data-bind="submit:startSearch">
-                    <input class="search" type="search" placeholder="Type to filter/Enter to search..">
+                    <input class="search" type="search" placeholder="Type to filter/Enter to search....">
                 </form>
 
             </div>
@@ -37,7 +32,7 @@
 
         <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div data-bind="if:$data.show">
-                <div class="list-box" data-bind="event: {mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
+                <div class="list-box" data-bind="event: {click:$parent.highlightMarker, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
                     <img class="place-img" data-bind="attr:{src: $data.thumbnail}"><img>
                     <div class="place-details">
                         <div class="title">

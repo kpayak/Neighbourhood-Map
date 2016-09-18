@@ -7,6 +7,7 @@ var viewmodel = {};
 var markers = [];
 var bounds;
 var infowindow;
+var activeMarkerIndex;
 
 
 //Marker colors:
@@ -19,6 +20,50 @@ var defaultLocation = {
     lat: 37.7749,
     lng: -122.4194
 };
+
+function callback(results, status) {
+    //Clear list of places before updating it with search results
+    viewModel.listOfPlaces.removeAll();
+    if (status === "OK" && results.length > 1) {
+        //Clear any lingering html
+        $('.locations-list').html("");
+        for (var i = 0; i < results.length; i++) {
+            var place = placesService.getDetails({
+                placeId: results[i].place_id
+            }, function (p, status) {
+                if (status === "OK") {
+                    updatePlaceObject(p);
+                }
+            });
+        }
+    } else {
+        console.log("no results");
+        $('.locations-list').html("No results match your query.");
+    }
+    map.fitBounds(bounds);
+}
+
+function googleTextSearch(position, queryText) {
+    var placesService = new google.maps.places.PlacesService(map);
+    var request = {
+        location: position,
+        radius: '6000',
+        query: queryText
+    };
+    placesService.textSearch(request, callback);
+}
+
+function googleNearbySearch(position) {
+    placesService = new google.maps.places.PlacesService(map);
+
+    var currentLatLng = map.getCenter();
+    var initialRequest = {
+        location: position,
+        radius: 10000,
+        types: ['restaurant', 'cafe', 'bus_station', 'city_hall', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall', 'museum', 'library']
+    };
+    placesService.nearbySearch(initialRequest, callback);
+}
 
 function setCurrentLocation() {
     var pos;
@@ -96,7 +141,6 @@ function addMarker(position, title, markerText, markerColor) {
 }
 
 function populateInfoWindow(place) {
-
     var nameString = "<div class='infowindow-header'><div><h2>" + place.name + "</div></h2>";
     var iconString = "<div><img class='infowindow-img' src=" + place.icon + "></div></div>";
     var addressString = "<p class='infowindow-text'>" + place.address + "</p>";
@@ -105,13 +149,23 @@ function populateInfoWindow(place) {
     var hoursString = "<p class='infowindow-text'>Current Status: " + place.hours + "</p>";
     contentString = iconString + nameString + addressString + phoneString + websiteString + hoursString;
     infowindow.setContent(contentString);
+    setMarkerColor(place, markerColorHover);
+    if (activeMarkerIndex) {
+        setMarkerColor(viewModel.listOfPlaces()[activeMarkerIndex - 1], markerColorDefault);
+    }
+    activeMarkerIndex = place.index;
     infowindow.open(map, place.marker);
 }
 
+function setMarkerColor(place, color) {
+    var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + place.index + "|" + color + "|FFF");
+    place.marker.setIcon(pinImage);
+}
+
 function updatePlaceObject(p) {
-
+    bounds = new google.maps.LatLngBounds();
     var place = {};
-
+    //console.log(p);
     //Flag to show/hide in "view". Default set to true
     place.show = ko.observable(true);
 
@@ -128,7 +182,8 @@ function updatePlaceObject(p) {
     }
 
     if (p.address_components) {
-        place.address = p.address_components[0].short_name + " " + p.address_components[1].short_name + ", " + p.address_components[2].short_name + " " + p.address_components[4].short_name + " " + p.address_components[6].short_name;
+        //        place.address = p.address_components[0].short_name + " " + p.address_components[1].short_name + ", " + p.address_components[2].short_name + " " + p.address_components[4].short_name + " " + p.address_components[6].short_name;
+        place.address = p.formatted_address;
     } else {
         place.address = "N/A";
     }
@@ -193,8 +248,8 @@ function updatePlaceObject(p) {
     //Add marker for each place
     place.addMarker = function () {
         bounds.extend(place.marker.position);
+        map.setZoom(13);
         map.setCenter(bounds.getCenter());
-        map.setZoom(12);
         place.marker.visible = place.show();
         place.marker.setMap(map);
         //Add click listener to markers
@@ -204,50 +259,15 @@ function updatePlaceObject(p) {
     }
     place.addMarker();
     viewModel.listOfPlaces.push(place);
+    //show();
 }
 
-function googleTextSearch(position, queryText) {
-    var placesService = new google.maps.places.PlacesService(map);
-    var request = {
-        location: position,
-        radius: '6000',
-        query: queryText
-    };
-    placesService.textSearch(request, callback);
-}
-
-function googleNearbySearch(position) {
-    placesService = new google.maps.places.PlacesService(map);
-    var currentLatLng = map.getCenter();
-    var initialRequest = {
-        location: position,
-        radius: 10000,
-        types: ['restaurant', 'cafe', 'bus_station', 'city_hall', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall', 'museum', 'library']
-    };
-    placesService.nearbySearch(initialRequest, callback);
-}
-
-function callback(results, status) {
-    //Clear list of places before updating it with search results
-    viewModel.listOfPlaces.removeAll();
-    if (status === "OK" && results.length > 1) {
-        //Clear any lingering html
-        $('.locations-list').html("");
-        for (var i = 0; i < results.length; i++) {
-            var place = placesService.getDetails({
-                placeId: results[i].place_id
-            }, function (p, status) {
-                if (status === "OK") {
-                    updatePlaceObject(p);
-                }
-            });
-        }
-    } else {
-        console.log("no results");
-        $('.locations-list').html("No results match your query.");
+function show() {
+    console.log(viewModel.listOfPlaces().length);
+    for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
+        console.log("showing");
+        console.log(viewModel.listOfPlaces()[i].name);
     }
-    map.setCenter(bounds.getCenter());
-    map.fitBounds(bounds);
 }
 
 function filter() {
@@ -275,7 +295,8 @@ function initMap() {
 
     //Initialize Google maps
     map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 13
+        zoom: 13,
+        mapTypeControl: false
     });
 
     //Bounds object
@@ -286,23 +307,23 @@ function initMap() {
     //Remove infowindow if map is clicked
     google.maps.event.addListener(map, 'click', function () {
         infowindow.close();
+        if (activeMarkerIndex) {
+            console.log(activeMarkerIndex);
+            setMarkerColor(viewModel.listOfPlaces()[activeMarkerIndex - 1], markerColorDefault);
+        }
+
     });
 
     /* Re-center map based on user's current location */
     setCurrentLocation();
-    //map.fitBounds(bounds);
     $('.search').keyup(filter);
     $('.search-icon').click(startSearch);
 }
 
-
-
 /* KO Starts Here */
-
 viewModel = {
     listOfPlaces: ko.observableArray(),
     highlightMarker: function () {
-        //console.log(this);
         var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorHover + "|FFF");
         this.marker.setIcon(pinImage);
     },
