@@ -13,7 +13,6 @@
 
 <body>
     <div id="main-panel">
-
         <div class="search-panel">
             <div class="search-input">
                 <form data-bind="submit:startSearch">
@@ -50,7 +49,10 @@
                             <i class="icon ion-ios-telephone place-icons"></i>
                             <div data-bind="text: $data.phone"></div>
                         </div>
-                        <div class="yelp-reviews" data-bind="$data.yelpReviews"></div>
+                        <div class="rating">
+                            <i class=" icon ion-social-foursquare-outline place-icons"></i>
+                            <div data-bind="text: $data.rating"></div>
+                        </div>
                     </div>
                 </div>
             </div>

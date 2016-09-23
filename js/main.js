@@ -24,41 +24,20 @@ var defaultLocation = {
 };
 
 function callback(results, status) {
-    //Clear list of places before updating it with search results
-    viewModel.listOfPlaces.removeAll();
-    console.log("########Calling cb##########");
+    //    console.log(query1);
     if (status === "OK" && results.length > 1) {
-        console.log(results);
-        //Clear any lingering html
-        $('.locations-list').html("");
-        console.log("results length:" + results.length);
-        for (var i = 0; i < results.length; i++) {
-
-            var place = placesService.getDetails({
-                placeId: results[i].place_id
-            }, function (p, status) {
-                console.log("status=" + status);
-                if (status === "OK") {
-                    console.log("about to call update place");
-                    updatePlaceObject(p);
-                    //                    console.log(p);
-                }
-            });
+        var lat = results[0].geometry.location.lat();
+        var lng = results[0].geometry.location.lng();
+        var searchQuery = "food";
+        if ($('input').val() !== "") {
+            searchQuery = $('input').val();
         }
-    } else {
-        $('.locations-list').html("No results match your query.");
+        var fSQRequest = "https://api.foursquare.com/v2/venues/explore?client_id=" + clientID + "&client_secret=" + clientSecret + "&v=20160918&ll=";
+        fSQRequest += lat + "," + lng + "&query=" + searchQuery + "&sortByDistance=1&venuePhotos=1&limit=10";
+        console.log(fSQRequest);
+        requestFourSquare(fSQRequest);
+        map.fitBounds(bounds);
     }
-    console.log("------------");
-    console.log(viewModel.listOfPlaces().length);
-    //console.log(viewModel.fQratings());
-    //console.log(viewModel.fQratings()["(408) 719-1344"]);
-    //    for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
-    //        if ("(408) 719-1344" in fqPlacesMap) {
-    //            console.log("coming in if");
-    //            viewModel.listOfPlaces()[i].rating(fqPlacesMap[viewModel.listOfPlaces()[i].phone]);
-    //        }
-    //    }
-    map.fitBounds(bounds);
 }
 
 function googleTextSearch(position, queryText) {
@@ -73,7 +52,7 @@ function googleTextSearch(position, queryText) {
 
 function googleNearbySearch(position) {
     placesService = new google.maps.places.PlacesService(map);
-
+    var query1 = "new query";
     var currentLatLng = map.getCenter();
     var initialRequest = {
         location: position,
@@ -153,7 +132,7 @@ function addMarker(position, title, markerText, markerColor) {
         map: map,
         //animation: google.maps.Animation.DROP,
         icon: pinImage,
-        title: title,
+        title: title
     });
     bounds.extend(marker.position);
 }
@@ -188,10 +167,13 @@ function updatePlaceObject(p) {
     place.show = ko.observable(true);
 
     //Place id
-    place.id = p.place_id;
+    //    place.id = p.place_id;
 
     //Place icon
-    place.icon = p.icon;
+    if (p.categories[0].icon) {
+        place.icon = p.categories[0].icon.prefix + "64" + p.categories[0].icon.suffix;
+    }
+
 
     if (p.name) {
         place.name = p.name;
@@ -199,16 +181,15 @@ function updatePlaceObject(p) {
         place.name = "N/A";
     }
 
-    if (p.address_components) {
-        //        place.address = p.address_components[0].short_name + " " + p.address_components[1].short_name + ", " + p.address_components[2].short_name + " " + p.address_components[4].short_name + " " + p.address_components[6].short_name;
-        place.address = p.formatted_address;
+    if (p.location.formattedAddress) {
+        place.address = p.location.formattedAddress[0] + " " + p.location.formattedAddress[1];
     } else {
         place.address = "N/A";
     }
 
     //Phone number
-    if (p.formatted_phone_number) {
-        place.phone = p.formatted_phone_number;
+    if (p.contact.formattedPhone) {
+        place.phone = p.contact.formattedPhone;
     } else {
         place.phone = "N/A";
     }
@@ -216,36 +197,34 @@ function updatePlaceObject(p) {
     //place.phone = (condition)?true:false
     //place.phone = (p.formatted_phone_number)?p.formatted_phone_number:"N/A"
     //Thumbnail
-    if (p.photos) {
-        place.thumbnail = p.photos[0].getUrl({
-            'maxWidth': 100,
-            'maxHeight': 100
-        });
+    if (p.photos.count >= 1) {
+
+        place.thumbnail = p.photos.groups[0].items[0].prefix + "100x100" + p.photos.groups[0].items[0].suffix;
     } else {
         place.thumbnail = '';
     }
 
     //Add Lat Lng Info
-    if (p.geometry.location) {
+    if (p.location) {
         place.latlng = {
-            lat: p.geometry.location.lat(),
-            lng: p.geometry.location.lng()
+            lat: p.location.lat,
+            lng: p.location.lng
         };
     }
 
     //Add website info
-    if (p.website) {
-        place.website = p.website;
+    if (p.url) {
+        place.website = p.url;
     } else {
-        place.website = "No Website found for this place."
+        place.website = "No Website found for this place.";
     }
 
     //Add Open Hours info
-    if (p.opening_hours) {
-        if (p.opening_hours.open_now) {
+    if (p.hours) {
+        if (p.hours.isOpen) {
             place.hours = "Open Now";
         } else {
-            place.hours = "Closed for today";
+            place.hours = "Closed Now";
         }
 
     } else {
@@ -255,7 +234,12 @@ function updatePlaceObject(p) {
     place.index = viewModel.listOfPlaces().length + 1;
 
     //FourSquare rating of this place, initialize to N/A
-    place.rating = ko.observable("N/A");
+    if (p.rating) {
+        place.rating = ko.observable(p.rating.toString());
+    } else {
+        place.rating = ko.observable("N/A");
+    }
+
 
     //Prepare marker object for each place
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + place.index + "|" + markerColorDefault + "|FFF");
@@ -282,48 +266,20 @@ function updatePlaceObject(p) {
     }
 
     place.addMarker();
-
+    //console.log(p);
     viewModel.listOfPlaces.push(place);
-    console.log("inside update:" + viewModel.listOfPlaces().length);
-
-    //Build query for FourSquare Request
-
-    var query = "https://api.foursquare.com/v2/venues/explore?client_id=" + clientID + "&client_secret=" + clientSecret + "&v=20160918&ll=";
-    query += place.latlng.lat + "," + place.latlng.lng + "&query=" + place.name;
-    requestFourSquare(query, place);
-    if (place.phone in viewModel.fQratings()) {
-        place.rating(viewModel.fQratings()[place.phone]);
-    }
-    //console.log(place.rating());
-    //    console.log(fqPlacesMap);
-    //    console.log(place.rating);
-    //    console.log(place.phone);
 }
 
-function requestFourSquare(url, place) {
+function requestFourSquare(url) {
     $.ajax({
         url: url,
         dataType: 'json'
     }).done(function (data) {
-        var str = "";
-        //        console.log(data.response.groups[0].items);
         for (var i = 0; i < data.response.groups[0].items.length; i++) {
-            if (data.response.groups[0].items[i].venue.contact.formattedPhone) {
-                str = data.response.groups[0].items[i].venue.contact.formattedPhone.toString();
-                viewModel.fQratings()[str] = data.response.groups[0].items[i].venue.rating;
-            }
-
+            updatePlaceObject(data.response.groups[0].items[i].venue);
+            //console.log(data.response.groups[0].items[i].venue);
         }
     });
-}
-
-
-function show() {
-    console.log(viewModel.listOfPlaces().length);
-    for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
-        console.log("showing");
-        console.log(viewModel.listOfPlaces()[i].name);
-    }
 }
 
 function filter() {
@@ -364,10 +320,8 @@ function initMap() {
     google.maps.event.addListener(map, 'click', function () {
         infowindow.close();
         if (activeMarkerIndex) {
-            console.log(activeMarkerIndex);
             setMarkerColor(viewModel.listOfPlaces()[activeMarkerIndex - 1], markerColorDefault);
         }
-
     });
 
     /* Re-center map based on user's current location */
@@ -379,8 +333,6 @@ function initMap() {
 /* KO Starts Here */
 viewModel = {
     listOfPlaces: ko.observableArray(),
-    fQratings: ko.observableArray(),
-    //    noOfPlaces: ko.observable(this.listOfPlaces.length),
     highlightMarker: function () {
         var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorHover + "|FFF");
         this.marker.setIcon(pinImage);
@@ -393,6 +345,4 @@ viewModel = {
         populateInfoWindow(this);
     }
 };
-
-viewModel.noOfPlaces = ko.observable(0);
 ko.applyBindings(viewModel);
