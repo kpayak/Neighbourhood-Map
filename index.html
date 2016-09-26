@@ -30,8 +30,6 @@
             <div class="location"></div>
         </div>
 
-
-
         <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div data-bind="if:$data.show">
                 <div class="list-box" data-bind="event: {click:$parent.onClick, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
@@ -57,9 +55,17 @@
                 </div>
             </div>
         </div>
+
+        <div class="error-box">
+            <!--            <p>No results match your query</p>-->
+        </div>
     </div>
 
     <div id="map">
+    </div>
+
+    <div id="attribution">
+        <p>This app is powered by Google Maps and Foursquare</p>
     </div>
 
     <!--Knockout JS-->

@@ -9,8 +9,6 @@ var infowindow;
 var activeMarkerIndex;
 var clientID = "C1VSX4Z10JN5IVAZG54PHQZIHKOWHCLT1HV5OBI5HDI3G2BP";
 var clientSecret = "BRVRMH3JTY4DA2ACVBHC5YDPKAHU354HOYO4V3MUNYESPJWV";
-var fqPlacesMap = {};
-
 
 //Marker colors:
 var markerColorHome = '19B5FE';
@@ -22,23 +20,6 @@ var defaultLocation = {
     lat: 37.7749,
     lng: -122.4194
 };
-
-function callback(results, status) {
-    //    console.log(query1);
-    if (status === "OK" && results.length > 1) {
-        var lat = results[0].geometry.location.lat();
-        var lng = results[0].geometry.location.lng();
-        var searchQuery = "food";
-        if ($('input').val() !== "") {
-            searchQuery = $('input').val();
-        }
-        var fSQRequest = "https://api.foursquare.com/v2/venues/explore?client_id=" + clientID + "&client_secret=" + clientSecret + "&v=20160918&ll=";
-        fSQRequest += lat + "," + lng + "&query=" + searchQuery + "&sortByDistance=1&venuePhotos=1&limit=10";
-        console.log(fSQRequest);
-        requestFourSquare(fSQRequest);
-        map.fitBounds(bounds);
-    }
-}
 
 function googleTextSearch(position, queryText) {
     var placesService = new google.maps.places.PlacesService(map);
@@ -57,12 +38,80 @@ function googleNearbySearch(position) {
     var initialRequest = {
         location: position,
         radius: 10000,
-        types: ['restaurant', 'cafe', 'bus_station', 'city_hall', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall', 'museum', 'library']
+        types: ['restaurant', 'cafe', 'bus_station', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall']
     };
     placesService.nearbySearch(initialRequest, callback);
 }
 
-function setCurrentLocation() {
+function callback(results, status) {
+    console.log(results);
+    viewModel.listOfPlaces.removeAll();
+    //Remove error box
+    removeErrorBox();
+    console.log(status);
+    if (status === "OK") {
+        bounds = new google.maps.LatLngBounds();
+        results.forEach(getFourSqRating);
+    } else if (status === "ZERO_RESULTS") {
+        showErrorBox("Cannont find results matching your query");
+    } else {
+        showErrorBox("Oops..Something went wrong with Google Maps API");
+    }
+}
+
+function showErrorBox(errorMessage) {
+    $('.error-box').css({
+        "transform": "translateX(0px)"
+    });
+    $('.error-box').html(errorMessage);
+}
+
+function removeErrorBox() {
+    $('.error-box').html("");
+    $('.error-box').css({
+        "transform": "translateX(-1200px)"
+    });
+}
+
+function getFourSqRating(item) {
+    var trimmedGName = item.name.toLowerCase().replace(/\s/g, "");
+    var lat = item.geometry.location.lat();
+    var lng = item.geometry.location.lng();
+    var fSQRequest = "https://api.foursquare.com/v2/venues/explore?client_id=" + clientID + "&client_secret=" + clientSecret + "&v=20160918&ll=";
+    fSQRequest += lat + "," + lng + "&radius=250&venuePhotos=1&limit=20";
+    var latDiff = 100;
+    var lngDiff = 100;
+    var fqvenue = {};
+    $.ajax({
+        url: fSQRequest,
+        dataType: 'json'
+    }).done(function (data) {
+        for (var i = 0; i < data.response.groups[0].items.length; i++) {
+            var venue = data.response.groups[0].items[i].venue;
+            var venueName = venue.name.toLowerCase().replace(/\s/g, "");
+            var venueLat = venue.location.lat;
+            var venueLng = venue.location.lng;
+
+            //Find closest location from current google maps location
+            if (latDiff > Math.abs((venue.location.lat - lat) * 100 / lat) && lngDiff > Math.abs((venue.location.lng - lng) * 100 / lng) && (trimmedGName.indexOf(venueName) !== -1)) {
+                latDiff = Math.abs((venue.location.lat - lat) * 100 / lat);
+                lngDiff = Math.abs((venue.location.lng - lng) * 100 / lng);
+                fqvenue = venue;
+            }
+        }
+        //Call Update place object if there is a match betweeen google maps location and foursquare location
+        if (fqvenue.name) {
+            fqvenue.icon = item.icon;
+            updatePlaceObject(fqvenue);
+        }
+        map.fitBounds(bounds);
+    }).error(function () {
+        showErrorBox("Oops..something went wrong with FourSquare API");
+    });
+}
+
+//This function gets user's current location and then searches for places nearby
+function getCurrentLocation() {
     var pos;
     var geolocOptions = {
         maximumAge: 10 * 60 * 1000, //Cache current location for 10 minutes
@@ -95,7 +144,6 @@ function setCurrentLocation() {
 
 //Function to handle Geo-locator errors.
 function geolocErrorHandler(error) {
-    //    console.log("Error code: " + error.code);
     map.setCenter(defaultLocation);
     reverseGeoCode(defaultLocation, '#F64747');
     addMarker(defaultLocation, "Default Marker", "", markerColorHome);
@@ -144,6 +192,7 @@ function populateInfoWindow(place) {
     var phoneString = "<p class='infowindow-text'>" + place.phone + " | ";
     var websiteString = "<a href=" + place.website + ">Website</a>" + "</p>";
     var hoursString = "<p class='infowindow-text'>Current Status: " + place.hours + "</p>";
+    console.log(iconString);
     contentString = iconString + nameString + addressString + phoneString + websiteString + hoursString;
     infowindow.setContent(contentString);
     setMarkerColor(place, markerColorHover);
@@ -160,49 +209,25 @@ function setMarkerColor(place, color) {
 }
 
 function updatePlaceObject(p) {
-    bounds = new google.maps.LatLngBounds();
+
     var place = {};
-    //console.log(p);
     //Flag to show/hide in "view". Default set to true
     place.show = ko.observable(true);
 
-    //Place id
-    //    place.id = p.place_id;
-
     //Place icon
-    if (p.categories[0].icon) {
-        place.icon = p.categories[0].icon.prefix + "64" + p.categories[0].icon.suffix;
-    }
+    place.icon = p.icon;
 
+    //Update Name property of name
+    place.name = p.name ? p.name : "N/A";
 
-    if (p.name) {
-        place.name = p.name;
-    } else {
-        place.name = "N/A";
-    }
-
-    if (p.location.formattedAddress) {
-        place.address = p.location.formattedAddress[0] + " " + p.location.formattedAddress[1];
-    } else {
-        place.address = "N/A";
-    }
+    //Update Address attribute of place object
+    place.address = p.location.formattedAddress ? p.location.formattedAddress[0] + " " + p.location.formattedAddress[1] : "N/A";
 
     //Phone number
-    if (p.contact.formattedPhone) {
-        place.phone = p.contact.formattedPhone;
-    } else {
-        place.phone = "N/A";
-    }
+    place.phone = p.contact.formattedPhone ? p.contact.formattedPhone : "N/A";
 
-    //place.phone = (condition)?true:false
-    //place.phone = (p.formatted_phone_number)?p.formatted_phone_number:"N/A"
-    //Thumbnail
-    if (p.photos.count >= 1) {
-
-        place.thumbnail = p.photos.groups[0].items[0].prefix + "100x100" + p.photos.groups[0].items[0].suffix;
-    } else {
-        place.thumbnail = '';
-    }
+    //Update Photos for object
+    place.thumbnail = (p.photos.count >= 1) ? p.photos.groups[0].items[0].prefix + "100x100" + p.photos.groups[0].items[0].suffix : '';
 
     //Add Lat Lng Info
     if (p.location) {
@@ -213,40 +238,26 @@ function updatePlaceObject(p) {
     }
 
     //Add website info
-    if (p.url) {
-        place.website = p.url;
-    } else {
-        place.website = "No Website found for this place.";
-    }
+    place.website = p.url ? p.url : "No Website found for this place.";
 
     //Add Open Hours info
     if (p.hours) {
-        if (p.hours.isOpen) {
-            place.hours = "Open Now";
-        } else {
-            place.hours = "Closed Now";
-        }
-
+        place.hours = p.hours.open ? "Open Now" : "Closed Now";
     } else {
         place.hours = "N/A";
     }
 
+    //Add index property for easy searching 
     place.index = viewModel.listOfPlaces().length + 1;
 
     //FourSquare rating of this place, initialize to N/A
-    if (p.rating) {
-        place.rating = ko.observable(p.rating.toString());
-    } else {
-        place.rating = ko.observable("N/A");
-    }
-
+    place.rating = p.rating ? ko.observable(p.rating.toString()) : ko.observable("N/A");
 
     //Prepare marker object for each place
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + place.index + "|" + markerColorDefault + "|FFF");
 
     place.marker = new google.maps.Marker({
         position: place.latlng,
-        //animation: google.maps.Animation.DROP,
         icon: pinImage,
         title: place.name,
         id: place.id
@@ -255,8 +266,6 @@ function updatePlaceObject(p) {
     //Add marker for each place
     place.addMarker = function () {
         bounds.extend(place.marker.position);
-        map.setZoom(13);
-        map.setCenter(bounds.getCenter());
         place.marker.visible = place.show();
         place.marker.setMap(map);
         //Add click listener to markers
@@ -265,35 +274,39 @@ function updatePlaceObject(p) {
         });
     }
 
+    //Add marker for current place
     place.addMarker();
-    //console.log(p);
-    viewModel.listOfPlaces.push(place);
-}
 
-function requestFourSquare(url) {
-    $.ajax({
-        url: url,
-        dataType: 'json'
-    }).done(function (data) {
-        for (var i = 0; i < data.response.groups[0].items.length; i++) {
-            updatePlaceObject(data.response.groups[0].items[i].venue);
-            //console.log(data.response.groups[0].items[i].venue);
-        }
-    });
+    //Update list of places observable array
+    viewModel.listOfPlaces.push(place);
 }
 
 function filter() {
     var searchQuery = $('input').val().toLocaleLowerCase();
     var lowerCaseName = "";
+    var counter = 1;
+    var errorBox = $('.error-box');
     for (var i = 0; i < viewModel.listOfPlaces().length; i++) {
         lowerCaseName = viewModel.listOfPlaces()[i].name.toLowerCase();
         if (lowerCaseName.search(searchQuery) !== -1) {
+            //Remove error box
+            errorBox.html("");
+            errorBox.css({
+                "transform": "translateX(-1200px)"
+            });
             viewModel.listOfPlaces()[i].show(true);
             viewModel.listOfPlaces()[i].addMarker();
         } else {
+            counter++;
             viewModel.listOfPlaces()[i].show(false);
             viewModel.listOfPlaces()[i].addMarker();
         }
+    }
+
+    //If no results match query then show error box
+    if (counter > viewModel.listOfPlaces().length) {
+        //Show error box
+        showErrorBox("No results match your query");
     }
 }
 
@@ -325,7 +338,7 @@ function initMap() {
     });
 
     /* Re-center map based on user's current location */
-    setCurrentLocation();
+    getCurrentLocation();
     $('.search').keyup(filter);
     $('.search-icon').click(startSearch);
 }
