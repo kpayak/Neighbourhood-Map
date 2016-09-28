@@ -17,4 +17,5 @@
   $> cd /path/to/your-project-folder/dist/
   $> python -m SimpleHTTPServer 8080
   ```
+  
 2. Open index.html file to run application.
