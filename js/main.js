@@ -3,7 +3,6 @@
 // GLOBAL VARIABLES //
 var map;
 var placesService;
-var viewmodel = {};
 var bounds;
 var infowindow;
 var activeMarkerIndex;
@@ -15,12 +14,13 @@ var markerColorHome = '19B5FE';
 var markerColorDefault = 'F22613';
 var markerColorHover = '26C281';
 
-//Find current location and set as default center for map
+//Default location in case user's location services are disabled.
 var defaultLocation = {
     lat: 37.7749,
     lng: -122.4194
 };
 
+//This function does a text search in the beginning around user's location.
 function googleTextSearch(position, queryText) {
     var placesService = new google.maps.places.PlacesService(map);
     var request = {
@@ -31,6 +31,7 @@ function googleTextSearch(position, queryText) {
     placesService.textSearch(request, callback);
 }
 
+//This does google nearby search when user enters a value in input box.
 function googleNearbySearch(position) {
     placesService = new google.maps.places.PlacesService(map);
     var query1 = "new query";
@@ -44,11 +45,9 @@ function googleNearbySearch(position) {
 }
 
 function callback(results, status) {
-    console.log(results);
     viewModel.listOfPlaces.removeAll();
     //Remove error box
     removeErrorBox();
-    console.log(status);
     if (status === "OK") {
         bounds = new google.maps.LatLngBounds();
         results.forEach(getFourSqRating);
@@ -59,6 +58,7 @@ function callback(results, status) {
     }
 }
 
+//This function displays a error box when anything goes wrong.
 function showErrorBox(errorMessage) {
     $('.error-box').css({
         "transform": "translateX(0px)"
@@ -66,6 +66,7 @@ function showErrorBox(errorMessage) {
     $('.error-box').html(errorMessage);
 }
 
+//This function removes any error box from previous searches.
 function removeErrorBox() {
     $('.error-box').html("");
     $('.error-box').css({
@@ -73,6 +74,7 @@ function removeErrorBox() {
     });
 }
 
+//This function calls FourSquare API async.
 function getFourSqRating(item) {
     var trimmedGName = item.name.toLowerCase().replace(/\s/g, "");
     var lat = item.geometry.location.lat();
@@ -172,6 +174,7 @@ function reverseGeoCode(position, color) {
     });
 }
 
+//This is used to add Marker of user's location.
 function addMarker(position, title, markerText, markerColor) {
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + markerText + "|" + markerColor + "|FFF");
     var bounds = new google.maps.LatLngBounds();
@@ -185,6 +188,7 @@ function addMarker(position, title, markerText, markerColor) {
     bounds.extend(marker.position);
 }
 
+//This function is used to populate info window dynamically with place details.
 function populateInfoWindow(place) {
     var nameString = "<div class='infowindow-header'><div><h2>" + place.name + "</div></h2>";
     var iconString = "<div><img class='infowindow-img' src=" + place.icon + "></div></div>";
@@ -192,7 +196,6 @@ function populateInfoWindow(place) {
     var phoneString = "<p class='infowindow-text'>" + place.phone + " | ";
     var websiteString = "<a href=" + place.website + ">Website</a>" + "</p>";
     var hoursString = "<p class='infowindow-text'>Current Status: " + place.hours + "</p>";
-    console.log(iconString);
     contentString = iconString + nameString + addressString + phoneString + websiteString + hoursString;
     infowindow.setContent(contentString);
     setMarkerColor(place, markerColorHover);
@@ -203,11 +206,13 @@ function populateInfoWindow(place) {
     infowindow.open(map, place.marker);
 }
 
+//This function is used to set marker color dynamically.
 function setMarkerColor(place, color) {
     var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + place.index + "|" + color + "|FFF");
     place.marker.setIcon(pinImage);
 }
 
+//This function creates a place object by gathering data from google API and FourSquare API results
 function updatePlaceObject(p) {
 
     var place = {};
@@ -281,6 +286,7 @@ function updatePlaceObject(p) {
     viewModel.listOfPlaces.push(place);
 }
 
+//This function takes care of filtering in list of places
 function filter() {
     var searchQuery = $('input').val().toLocaleLowerCase();
     var lowerCaseName = "";
@@ -290,10 +296,7 @@ function filter() {
         lowerCaseName = viewModel.listOfPlaces()[i].name.toLowerCase();
         if (lowerCaseName.search(searchQuery) !== -1) {
             //Remove error box
-            errorBox.html("");
-            errorBox.css({
-                "transform": "translateX(-1200px)"
-            });
+            removeErrorBox();
             viewModel.listOfPlaces()[i].show(true);
             viewModel.listOfPlaces()[i].addMarker();
         } else {
@@ -310,14 +313,14 @@ function filter() {
     }
 }
 
+//Function to start nearby search when a string is entered in input box
 function startSearch() {
     var searchQuery = $('input').val();
     googleTextSearch(map.getCenter(), searchQuery);
 }
 
-//Google maps initiates from Here. This can be treated as the starting point/main() of this application.
+//Function to initialize google maps
 function initMap() {
-
     //Initialize Google maps
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13,
@@ -343,6 +346,8 @@ function initMap() {
     $('.search-icon').click(startSearch);
 }
 
+
+
 /* KO Starts Here */
 viewModel = {
     listOfPlaces: ko.observableArray(),
@@ -359,3 +364,17 @@ viewModel = {
     }
 };
 ko.applyBindings(viewModel);
+
+//On document ready call Google maps api
+$(document).ready(function () {
+    $.ajax({
+        url: 'https://maps.googleapis.com/maps/api/js?key=AIzaSyC2aWJBV-USDHah8cf2YIrZ9bKQZawRnz4&v=3&libraries=places&callback=initMap',
+        dataType: 'script',
+        timeout: 2000,
+        success: function () {
+            initMap();
+        }
+    }).fail(function (jqXHR, textStatus) {
+        showErrorBox("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
+    });
+});
