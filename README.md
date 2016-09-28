@@ -12,8 +12,9 @@
 #### This application uses Google and FourSquare API to gather and show results on map and list view.
 
 ## How to Run:
-### 1. Download/Clone this git repo.
+1. Download/Clone this git repo.
  ```bash
   $> cd /path/to/your-project-folder/dist/
   $> python -m SimpleHTTPServer 8080
   ```
+2. Open index.html file to run application.
