@@ -1,7 +1,7 @@
 # Neighbourhood-Map Project
 ## Developed by: Keyur Payak
 ## Project Description
-1. Gather user's location. If location services are disabled a default location is set in San Francisco.
+1. Gather user's location. If location services are disabled a default location is set in San Francisco. User's location is shown using a blue marker on map.
 2. Use Google Text Search API to find restaurants/cafe nearby and show them on google map using markers and in a list view in a panel.
 3. Clicking on a place in list view will show a info window on map showing place details.
 4. For each place, its address, phone number, hours are shown. Additionally FourSquare API is used to gather current places' rating and photos. 
