@@ -186,8 +186,13 @@ function populateInfoWindow(place) {
     var iconString = "<div><img class='infowindow-img' src=" + place.icon + "></div></div>";
     var addressString = "<p class='infowindow-text'>" + place.address + "</p>";
     var phoneString = "<p class='infowindow-text'>" + place.phone + " | ";
-    var websiteString = "<a href=" + place.website + ">Website</a>" + "</p>";
+    var websiteString;
     var hoursString = "<p class='infowindow-text'>Current Status: " + place.hours + "</p>";
+    if (place.website != "N/A") {
+        websiteString = "<a href=" + place.website + ">Website</a>" + "</p>";
+    } else {
+        websiteString = "<p>No website available</p>"
+    }
     contentString = iconString + nameString + addressString + phoneString + websiteString + hoursString;
     infowindow.setContent(contentString);
     setMarkerColor(place, markerColorHover);
@@ -235,7 +240,8 @@ function updatePlaceObject(p) {
     }
 
     //Add website info
-    place.website = p.url ? p.url : "No Website found for this place.";
+    place.website = p.url ? p.url : "N/A";
+    //    console.log(place.website);
 
     //Add Open Hours info
     if (p.hours) {
