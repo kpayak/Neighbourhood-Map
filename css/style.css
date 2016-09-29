@@ -188,7 +188,7 @@ input:focus:-moz-placeholder {
 }
 
 .list-box,
-.error-box {
+.message-box {
     background-color: #fff;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -213,8 +213,10 @@ input:focus:-moz-placeholder {
     transition: box-shadow 0.2s;
 }
 
-.error-box {
+.message-box {
+    background-color: #fff;
     height: 50px;
+    color: red;
     -webkit-box-pack: center;
     -ms-flex-pack: center;
     justify-content: center;
@@ -222,9 +224,6 @@ input:focus:-moz-placeholder {
     -ms-flex-align: center;
     -ms-grid-row-align: center;
     align-items: center;
-    color: red;
-    -webkit-transform: translateX(-1020px);
-    transform: translateX(-1200px);
 }
 
 .list-box:first-of-type {
@@ -293,7 +292,7 @@ input:focus:-moz-placeholder {
     -webkit-box-pack: center;
     -ms-flex-pack: center;
     justify-content: center;
-    /*    background-color: #26A65B;*/
+    /*    background-color: #26A65B;
     /*    border-right: 1px solid #26A65B;*/
     -webkit-box-align: center;
     -ms-flex-align: center;

@@ -54,8 +54,8 @@
             </div>
         </div>
 
-        <div class="error-box">
-            <!--            <p>No results match your query</p>-->
+        <div class="message-box" data-bind="visible:isError">
+            <p data-bind="text:errorMessage"></p>
         </div>
     </div>
 

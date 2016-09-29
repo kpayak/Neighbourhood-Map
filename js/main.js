@@ -47,31 +47,22 @@ function googleNearbySearch(position) {
 function callback(results, status) {
     viewModel.listOfPlaces.removeAll();
     //Remove error box
-    removeErrorBox();
+    viewModel.isError(false);
+    //    removeErrorBox();
     if (status === "OK") {
         bounds = new google.maps.LatLngBounds();
         results.forEach(getFourSqRating);
     } else if (status === "ZERO_RESULTS") {
-        showErrorBox("Cannont find results matching your query");
+        //Show error box
+        viewModel.isError(true);
+        viewModel.errorMessage("Cannot find results matching your query");
+        //        showErrorBox("Cannot find results matching your query");
     } else {
-        showErrorBox("Oops..Something went wrong with Google Maps API");
+        //Show error box
+        viewModel.isError(true);
+        viewModel.errorMessage("Oops..Something went wrong with Google Maps API");
+        //        showErrorBox("Oops..Something went wrong with Google Maps API");
     }
-}
-
-//This function displays a error box when anything goes wrong.
-function showErrorBox(errorMessage) {
-    $('.error-box').css({
-        "transform": "translateX(0px)"
-    });
-    $('.error-box').html(errorMessage);
-}
-
-//This function removes any error box from previous searches.
-function removeErrorBox() {
-    $('.error-box').html("");
-    $('.error-box').css({
-        "transform": "translateX(-1200px)"
-    });
 }
 
 //This function calls FourSquare API async.
@@ -108,7 +99,8 @@ function getFourSqRating(item) {
         }
         map.fitBounds(bounds);
     }).error(function () {
-        showErrorBox("Oops..something went wrong with FourSquare API");
+        viewModel.isError(true);
+        viewModel.errorMessage("Oops..something went wrong with FourSquare API");
     });
 }
 
@@ -296,7 +288,7 @@ function filter() {
         lowerCaseName = viewModel.listOfPlaces()[i].name.toLowerCase();
         if (lowerCaseName.search(searchQuery) !== -1) {
             //Remove error box
-            removeErrorBox();
+            viewModel.isError(false);
             viewModel.listOfPlaces()[i].show(true);
             viewModel.listOfPlaces()[i].addMarker();
         } else {
@@ -309,7 +301,8 @@ function filter() {
     //If no results match query then show error box
     if (counter > viewModel.listOfPlaces().length) {
         //Show error box
-        showErrorBox("No results match your query");
+        viewModel.isError(true);
+        viewModel.errorMessage("No results match your query");
     }
 }
 
@@ -361,7 +354,9 @@ viewModel = {
     },
     onClick: function () {
         populateInfoWindow(this);
-    }
+    },
+    isError: ko.observable(false),
+    errorMessage: ko.observable("")
 };
 ko.applyBindings(viewModel);
 
@@ -375,6 +370,8 @@ $(document).ready(function () {
             initMap();
         }
     }).fail(function (jqXHR, textStatus) {
-        showErrorBox("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
+        viewModel.isError(true);
+        viewModel.errorMessage("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
+        //        showErrorBox("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
     });
 });
