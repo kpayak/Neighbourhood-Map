@@ -122,12 +122,13 @@ function getCurrentLocation() {
             //Add a marker for current location
             addMarker(pos, "You are here", "", markerColorHome);
             //Find formatted address of current location
-            reverseGeoCode(pos, '#2ECC71');
+            reverseGeoCode(pos);
         }, geolocErrorHandler, geolocOptions);
     } else {
         //If user device does not have location services then set map to default location
+        viewModel.locationNotFound(true);
         map.setCenter(defaultLocation);
-        reverseGeoCode(defaultLocation, '#F64747');
+        reverseGeoCode(defaultLocation);
         googleNearbySearch(defaultLocation, bounds);
         addMarker(defaultLocation, "Default Marker", "", markerColorHome);
     }
@@ -135,31 +136,25 @@ function getCurrentLocation() {
 
 //Function to handle Geo-locator errors.
 function geolocErrorHandler(error) {
+    viewModel.locationNotFound(true);
     map.setCenter(defaultLocation);
-    reverseGeoCode(defaultLocation, '#F64747');
+    reverseGeoCode(defaultLocation);
     addMarker(defaultLocation, "Default Marker", "", markerColorHome);
     googleNearbySearch(defaultLocation);
 }
 
 // Function to reverse geo-code from a lat,lng 
-function reverseGeoCode(position, color) {
+function reverseGeoCode(position) {
     var geocoder = new google.maps.Geocoder();
-    var formattedAddress = "";
     geocoder.geocode({
         'location': position
     }, function (results, status) {
         if (status === "OK") {
-            formattedAddress = results[1].formatted_address;
+            viewModel.formattedAddress(results[1].formatted_address);
 
         } else {
-            formattedAddress = "Failed to reverse geo-code";
+            viewModel.formattedAddress("Failed to reverse geo-code");
         }
-
-        $('.location').text(formattedAddress);
-        $('.indicator').css({
-            'background-color': color
-        });
-
     });
 }
 
@@ -272,7 +267,7 @@ function updatePlaceObject(p) {
         place.marker.addListener('click', function () {
             populateInfoWindow(place);
         });
-    }
+    };
 
     //Add marker for current place
     place.addMarker();
@@ -309,12 +304,6 @@ function filter(query) {
     }
 }
 
-//Function to start nearby search when a string is entered in input box
-//function startSearch() {
-//    var searchQuery = $('input').val();
-//    googleTextSearch(map.getCenter(), searchQuery);
-//}
-
 //Function to initialize google maps
 function initMap() {
     //Initialize Google maps
@@ -338,26 +327,24 @@ function initMap() {
 
     /* Re-center map based on user's current location */
     getCurrentLocation();
-    //    $('.search').keyup(filter);
-    //    $('.search-icon').click(startSearch);
 }
-
-
 
 /* KO Starts Here */
 viewModel = {
     listOfPlaces: ko.observableArray(),
-    highlightMarker: function () {
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorHover + "|FFF");
-        this.marker.setIcon(pinImage);
-    },
-    resetMarkerColor: function () {
-        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorDefault + "|FFF");
-        this.marker.setIcon(pinImage);
-    },
+//    highlightMarker: function () {
+        //        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorHover + "|FFF");
+        //        this.marker.setIcon(pinImage);
+        //    },
+        //    resetMarkerColor: function () {
+        //        var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + this.index + "|" + markerColorDefault + "|FFF");
+        //        this.marker.setIcon(pinImage);
+        //    },
     onClick: function () {
         populateInfoWindow(this);
     },
+    formattedAddress: ko.observable(""),
+    locationNotFound: ko.observable(false),
     isError: ko.observable(false),
     errorMessage: ko.observable(""),
     searchText: ko.observable(''),

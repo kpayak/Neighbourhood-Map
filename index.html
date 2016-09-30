@@ -14,8 +14,6 @@
         <div class="search-panel">
             <div class="search-input">
                 <form data-bind="submit:startSearch">
-                    <!--                    <input class="search" type="search" placeholder="Type to filter/Enter to search...." data-bind="textInput:searchText, event:{keypress:filterResults}">-->
-
                     <input class="search" type="search" placeholder="Type to filter/Enter to search...." data-bind="value:searchText, valueUpdate:'afterkeydown'">
                 </form>
 
@@ -26,13 +24,14 @@
         </div>
 
         <div class="location-indicator">
-            <div class="indicator"></div>
-            <div class="location"></div>
+            <div class="indicator" data-bind="css: {indicatorRed:locationNotFound}"></div>
+            <div class="location" data-bind="text:formattedAddress"></div>
         </div>
 
         <div class="locations-list" data-bind="foreach: listOfPlaces">
             <div data-bind="if:$data.show">
-                <div class="list-box" data-bind="event: {click:$parent.onClick, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">
+                <!--                <div class="list-box" data-bind="event: {click:$parent.onClick, mouseover: $parent.highlightMarker, mouseout: $parent.resetMarkerColor}">-->
+                <div class="list-box" data-bind="event: {click:$parent.onClick}">
                     <img class="place-img" data-bind="attr:{src: $data.thumbnail}"><img>
                     <div class="place-details">
                         <div class="title">
@@ -69,13 +68,13 @@
     </div>
 
     <!--    jQuery-->
-    <script type='text/javascript' src="js/libs/jquery-3.1.1.js"></script>
+    <script src="js/libs/jquery-3.1.1.js"></script>
 
     <!--Knockout JS-->
-    <script type='text/javascript' src="js/libs/knockout.js"></script>
+    <script src="js/libs/knockout.js"></script>
 
     <!-- Main JS File -->
-    <script type='text/javascript' src="js/main.js"></script>
+    <script src="js/main.js"></script>
 
 </body>
 
