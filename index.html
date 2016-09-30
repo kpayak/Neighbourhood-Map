@@ -14,11 +14,13 @@
         <div class="search-panel">
             <div class="search-input">
                 <form data-bind="submit:startSearch">
-                    <input class="search" type="search" placeholder="Type to filter/Enter to search....">
+                    <!--                    <input class="search" type="search" placeholder="Type to filter/Enter to search...." data-bind="textInput:searchText, event:{keypress:filterResults}">-->
+
+                    <input class="search" type="search" placeholder="Type to filter/Enter to search...." data-bind="value:searchText, valueUpdate:'afterkeydown'">
                 </form>
 
             </div>
-            <button class="search-icon">
+            <button class="search-icon" data-bind="click:startSearch">
                 <i class="icon ion-search"></i>
             </button>
         </div>

@@ -38,7 +38,7 @@ function googleNearbySearch(position) {
     var currentLatLng = map.getCenter();
     var initialRequest = {
         location: position,
-        radius: 10000,
+        radius: 6000,
         types: ['restaurant', 'cafe', 'bus_station', 'department_store', 'home_goods_store', 'transit_station', 'train_station', 'subway_station', 'shopping_mall']
     };
     placesService.nearbySearch(initialRequest, callback);
@@ -48,7 +48,6 @@ function callback(results, status) {
     viewModel.listOfPlaces.removeAll();
     //Remove error box
     viewModel.isError(false);
-    //    removeErrorBox();
     if (status === "OK") {
         bounds = new google.maps.LatLngBounds();
         results.forEach(getFourSqRating);
@@ -56,12 +55,10 @@ function callback(results, status) {
         //Show error box
         viewModel.isError(true);
         viewModel.errorMessage("Cannot find results matching your query");
-        //        showErrorBox("Cannot find results matching your query");
     } else {
         //Show error box
         viewModel.isError(true);
         viewModel.errorMessage("Oops..Something went wrong with Google Maps API");
-        //        showErrorBox("Oops..Something went wrong with Google Maps API");
     }
 }
 
@@ -285,8 +282,8 @@ function updatePlaceObject(p) {
 }
 
 //This function takes care of filtering in list of places
-function filter() {
-    var searchQuery = $('input').val().toLocaleLowerCase();
+function filter(query) {
+    var searchQuery = query.toLocaleLowerCase();
     var lowerCaseName = "";
     var counter = 1;
     var errorBox = $('.error-box');
@@ -313,10 +310,10 @@ function filter() {
 }
 
 //Function to start nearby search when a string is entered in input box
-function startSearch() {
-    var searchQuery = $('input').val();
-    googleTextSearch(map.getCenter(), searchQuery);
-}
+//function startSearch() {
+//    var searchQuery = $('input').val();
+//    googleTextSearch(map.getCenter(), searchQuery);
+//}
 
 //Function to initialize google maps
 function initMap() {
@@ -341,8 +338,8 @@ function initMap() {
 
     /* Re-center map based on user's current location */
     getCurrentLocation();
-    $('.search').keyup(filter);
-    $('.search-icon').click(startSearch);
+    //    $('.search').keyup(filter);
+    //    $('.search-icon').click(startSearch);
 }
 
 
@@ -362,8 +359,16 @@ viewModel = {
         populateInfoWindow(this);
     },
     isError: ko.observable(false),
-    errorMessage: ko.observable("")
+    errorMessage: ko.observable(""),
+    searchText: ko.observable(''),
+    startSearch: function () {
+        googleTextSearch(map.getCenter(), this.searchText());
+    }
 };
+
+viewModel.searchText.subscribe(function () {
+    filter(viewModel.searchText());
+});
 ko.applyBindings(viewModel);
 
 //On document ready call Google maps api
@@ -372,12 +377,8 @@ $(document).ready(function () {
         url: 'https://maps.googleapis.com/maps/api/js?key=AIzaSyC2aWJBV-USDHah8cf2YIrZ9bKQZawRnz4&v=3&libraries=places&callback=initMap',
         dataType: 'script',
         timeout: 2000,
-        success: function () {
-            initMap();
-        }
     }).fail(function (jqXHR, textStatus) {
         viewModel.isError(true);
         viewModel.errorMessage("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
-        //        showErrorBox("Something went wrong with google maps API. Also, check your Wi-Fi connection.");
     });
 });
