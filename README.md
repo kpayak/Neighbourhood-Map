@@ -11,7 +11,10 @@
 
 #### This application uses Google and FourSquare API to gather and show results on map and list view.
 
-## How to Run:
+## Live Demo
+https://kpayak.github.io/Neighbourhood-Map/
+
+## How to Run from local machine:
 1. Download/Clone this git repo.
  ```bash
   $> cd /path/to/your-project-folder/dist/
